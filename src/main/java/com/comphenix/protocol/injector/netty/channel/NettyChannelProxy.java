@@ -2,14 +2,7 @@ package com.comphenix.protocol.injector.netty.channel;
 
 import com.comphenix.protocol.utility.MinecraftReflection;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelConfig;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelMetadata;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.ChannelProgressivePromise;
-import io.netty.channel.ChannelPromise;
-import io.netty.channel.EventLoop;
+import io.netty.channel.*;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import java.net.SocketAddress;
@@ -31,6 +24,11 @@ final class NettyChannelProxy implements Channel {
         this.delegate = delegate;
         this.eventLoop = eventLoop;
         this.injector = injector;
+    }
+
+    @Override
+    public ChannelId id() {
+        return delegate.id();
     }
 
     @Override
@@ -86,6 +84,16 @@ final class NettyChannelProxy implements Channel {
     @Override
     public boolean isWritable() {
         return this.delegate.isWritable();
+    }
+
+    @Override
+    public long bytesBeforeUnwritable() {
+        return delegate.bytesBeforeWritable();
+    }
+
+    @Override
+    public long bytesBeforeWritable() {
+        return delegate.bytesBeforeWritable();
     }
 
     @Override
@@ -236,6 +244,11 @@ final class NettyChannelProxy implements Channel {
     @Override
     public <T> Attribute<T> attr(AttributeKey<T> key) {
         return this.delegate.attr(key);
+    }
+
+    @Override
+    public <T> boolean hasAttr(AttributeKey<T> attributeKey) {
+        return false;
     }
 
     @Override
