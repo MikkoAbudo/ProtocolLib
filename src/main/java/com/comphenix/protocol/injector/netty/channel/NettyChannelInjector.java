@@ -43,7 +43,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoop;
 import io.netty.util.AttributeKey;
-
+import io.netty.util.concurrent.AbstractEventExecutor.LazyRunnable;
 public class NettyChannelInjector implements Injector {
 
     private static final String INBOUND_INTERCEPTOR_NAME = "protocol_lib_inbound_interceptor";
@@ -557,6 +557,15 @@ public class NettyChannelInjector implements Injector {
     private <T> T proxyAction(T action, PacketEvent event, NetworkMarker marker) {
         // hack - we only know that the given action is either a runnable or callable, but we need to work out which thing
         // it is exactly to proceed correctly here.
+        if (action instanceof LazyRunnable){
+            return (T) (LazyRunnable) () -> {
+                // notify the outbound handler that the packets are processed
+                this.processedPackets.set(Boolean.TRUE);
+                // execute the action & invoke the post event
+                ((Runnable) action).run();
+                this.networkProcessor.invokePostEvent(event, marker);
+            };
+        }else
         if (action instanceof Runnable) {
             // easier thing to do - just wrap the runnable in a new one
             return (T) (Runnable) () -> {

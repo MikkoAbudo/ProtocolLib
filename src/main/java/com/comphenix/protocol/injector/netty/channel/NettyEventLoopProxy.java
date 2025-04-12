@@ -15,12 +15,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelPromise;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
-import io.netty.util.concurrent.EventExecutor;
-import io.netty.util.concurrent.Future;
-import io.netty.util.concurrent.ProgressivePromise;
-import io.netty.util.concurrent.Promise;
-import io.netty.util.concurrent.ScheduledFuture;
-
+import io.netty.util.concurrent.*;
+import io.netty.util.concurrent.AbstractEventExecutor.LazyRunnable;
 /**
  * An abstract event loop implementation which delegates all calls to a given event loop, but proxies all calls which
  * schedule something on the event loop to methods which decide what should happen to the scheduled task.
@@ -30,7 +26,6 @@ final class NettyEventLoopProxy implements EventLoop {
     private static final Callable<?> EMPTY_CALLABLE = () -> null;
     private static final Runnable EMPTY_RUNNABLE = () -> {
     };
-
     private final EventLoop delegate;
     private final NettyChannelInjector injector;
 
@@ -44,6 +39,12 @@ final class NettyEventLoopProxy implements EventLoop {
         Runnable proxied = this.injector.processOutbound(original);
         if (proxied != null && proxied == original) {
             // was not changed, we need to mark the packet as processed manually
+            if(original instanceof LazyRunnable){ //lazyExecution support
+                return (LazyRunnable) () -> {
+                    injector.processedPackets.set(Boolean.TRUE);
+                    original.run();
+                };
+            }
             return () -> {
                 this.injector.processedPackets.set(Boolean.TRUE);
                 original.run();

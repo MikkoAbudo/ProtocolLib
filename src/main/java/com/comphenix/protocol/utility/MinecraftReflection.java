@@ -622,8 +622,12 @@ public final class MinecraftReflection {
      *
      * @return The packet class.
      */
+    static Class<?> PACKET_CLASS;
     public static Class<?> getPacketClass() {
-        return getMinecraftClass("network.protocol.Packet", "Packet");
+        if(PACKET_CLASS != null){
+            return PACKET_CLASS;
+        }
+        return PACKET_CLASS = getMinecraftClass("network.protocol.Packet", "Packet");
     }
 
     public static Class<?> getByteBufClass() {
